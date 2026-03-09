@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DS検定★ 完全攻略ガイド</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#08080f;color:#e2e2ee;font-family:'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif;-webkit-tap-highlight-color:transparent}
+  button{font-family:inherit;cursor:pointer}
+  ::-webkit-scrollbar{height:4px;width:4px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:99px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const{useState,useEffect}=React;
+
+// ── DATA ──────────────────────────────────────────────
+const PHASES=[
+  {id:1,label:"PHASE 1",title:"全体像をつかむ",weeks:"1〜2週目",color:"#818CF8",bg:"rgba(129,140,248,0.08)",border:"rgba(129,140,248,0.25)",
+    weeks_data:[
+      {week:1,title:"データサイエンスの世界を知る",checkpoint:"「AIと機械学習の違い」を友人に説明できる",
+        keywords:["データサイエンス","AI","機械学習","DS力","DX","Society5.0"],
+        days:[
+          {day:"月",min:30,type:"動画",task:"「データサイエンスとは何か」を動画で全体像把握",video:"東大MIセンター 第1回「社会で起きているデータ革命」"},
+          {day:"火",min:30,type:"動画",task:"AI・機械学習・統計の違いをざっくり理解",video:"東大MIセンター 第2回「データ・AI利活用」"},
+          {day:"水",min:45,type:"動画+メモ",task:"DS力・DE力・ビジネス力の3スキルを整理",video:"東大MIセンター 第3回「データサイエンスのサイクル」"},
+          {day:"木",min:30,type:"動画",task:"データ活用の社会事例を業界別に確認",video:"東大MIセンター 第4回「データサイエンス事例紹介」"},
+          {day:"金",min:30,type:"復習",task:"今週の動画をもう1本選んで見直し＋キーワード10個書き出し",video:"好きな回を再視聴"},
+        ]},
+      {week:2,title:"データの種類と統計の入口",checkpoint:"ヒストグラムと箱ひげ図を見て特徴を説明できる",
+        keywords:["構造化データ","平均","中央値","分散","標準偏差","ヒストグラム","箱ひげ図"],
+        days:[
+          {day:"月",min:30,type:"動画",task:"構造化・非構造化データの違いを動画で理解",video:"東大MIセンター「データの種類と収集」"},
+          {day:"火",min:45,type:"動画+メモ",task:"平均・中央値・最頻値の違いを事例で理解",video:"統計学の時間 YouTube「代表値とは」"},
+          {day:"水",min:30,type:"動画",task:"ヒストグラム・箱ひげ図を読む練習",video:"統計学の時間「データの可視化」"},
+          {day:"木",min:45,type:"動画+演習",task:"分散・標準偏差を直感的に理解する",video:"予備校のノリで学ぶ「標準偏差わかりやすく」"},
+          {day:"金",min:30,type:"復習",task:"今週の重要グラフを1枚ずつ手書きでスケッチ",video:"—"},
+        ]},
+    ]},
+  {id:2,label:"PHASE 2",title:"統計をマスターする",weeks:"3〜5週目",color:"#34D399",bg:"rgba(52,211,153,0.08)",border:"rgba(52,211,153,0.25)",
+    weeks_data:[
+      {week:3,title:"確率と相関",checkpoint:"「相関係数0.9と0.3の散布図の形の違い」を説明できる",
+        keywords:["確率","条件付き確率","ベイズの定理","期待値","相関係数","因果関係"],
+        days:[
+          {day:"月",min:30,type:"動画",task:"確率の基本（加法則・乗法則）を動画で理解",video:"予備校のノリで学ぶ「確率入門」"},
+          {day:"火",min:45,type:"動画+メモ",task:"条件付き確率・ベイズの定理を事例で理解",video:"統計学の時間「条件付き確率」"},
+          {day:"水",min:30,type:"動画",task:"期待値・二項分布の概念を直感的に理解",video:"東大MIセンター「確率と統計」"},
+          {day:"木",min:45,type:"動画+演習",task:"相関係数の意味と散布図の読み取り",video:"統計学の時間「相関分析」"},
+          {day:"金",min:30,type:"復習",task:"「相関≠因果」の具体例を3つ考える",video:"—（考えるだけでOK）"},
+        ]},
+      {week:4,title:"正規分布・推定・検定",checkpoint:"仮説検定の4ステップを口で言える",
+        keywords:["正規分布","中心極限定理","信頼区間","仮説検定","p値","有意水準","帰無仮説"],
+        days:[
+          {day:"月",min:30,type:"動画",task:"正規分布の形と特徴（68-95-99.7則）を視覚で覚える",video:"統計学の時間「正規分布」"},
+          {day:"火",min:45,type:"動画+メモ",task:"母集団・標本・中心極限定理の概念を整理",video:"東大MIセンター「統計的推定」"},
+          {day:"水",min:30,type:"動画",task:"信頼区間の意味を図で理解（95%CIとは）",video:"予備校のノリで学ぶ「信頼区間」"},
+          {day:"木",min:45,type:"動画+メモ",task:"仮説検定の流れ：H0・H1・p値・有意水準を整理",video:"統計学の時間「仮説検定入門」"},
+          {day:"金",min:30,type:"復習",task:"「p値0.03、有意水準0.05 → 帰無仮説棄却？」の答えを確認",video:"—"},
+        ]},
+      {week:5,title:"頻出統計手法の総まとめ",checkpoint:"統計分野の模擬問題で正答率70%以上",
+        keywords:["t検定","カイ二乗検定","第一種の過誤","第二種の過誤","主成分分析","多変量解析"],
+        days:[
+          {day:"月",min:30,type:"動画",task:"t検定・カイ二乗検定の使い分けを概念で理解",video:"東大MIセンター or YouTube「検定の種類」"},
+          {day:"火",min:45,type:"動画+演習",task:"第一種・第二種の過誤をアニメで理解",video:"統計学の時間「過誤と検出力」"},
+          {day:"水",min:30,type:"動画",task:"多変量解析の概要（回帰・主成分分析）をざっくり把握",video:"東大MIセンター「多変量解析入門」"},
+          {day:"木",min:45,type:"模擬問題",task:"統計分野の模擬試験問題20問を解く",video:"公式リファレンスブック付属模擬試験"},
+          {day:"金",min:60,type:"復習",task:"間違えた問題の解説動画を探して視聴→理解",video:"YouTube検索「DS検定 統計 解説」"},
+        ]},
+    ]},
+  {id:3,label:"PHASE 3",title:"機械学習・AIを理解する",weeks:"6〜8週目",color:"#FBBF24",bg:"rgba(251,191,36,0.08)",border:"rgba(251,191,36,0.25)",
+    weeks_data:[
+      {week:6,title:"機械学習の基礎概念",checkpoint:"主要アルゴリズムを「回帰/分類/クラスタリング」に分類できる",
+        keywords:["教師あり学習","教師なし学習","線形回帰","ロジスティック回帰","決定木","ランダムフォレスト","k-means"],
+        days:[
+          {day:"月",min:30,type:"動画",task:"教師あり・なし・強化学習の違いをアニメで理解",video:"東大MIセンター「機械学習とは」"},
+          {day:"火",min:45,type:"動画+メモ",task:"線形回帰・ロジスティック回帰を図で理解",video:"予備校のノリで学ぶ「回帰分析」"},
+          {day:"水",min:30,type:"動画",task:"決定木・ランダムフォレストの仕組みをざっくり把握",video:"YouTube「決定木をわかりやすく」"},
+          {day:"木",min:45,type:"動画+メモ",task:"k-means・クラスタリングの動作を視覚で確認",video:"東大MIセンター「クラスタリング」"},
+          {day:"金",min:30,type:"復習",task:"「スパム判定は回帰？分類？」など5問クイズを自作して答える",video:"—"},
+        ]},
+      {week:7,title:"モデル評価・深層学習",checkpoint:"混同行列を見て精度・再現率・適合率を計算できる",
+        keywords:["精度(Accuracy)","再現率(Recall)","適合率(Precision)","F1スコア","AUC-ROC","過学習","ディープラーニング"],
+        days:[
+          {day:"月",min:30,type:"動画",task:"精度・再現率・F1スコアの意味を動画で整理",video:"東大MIセンター or YouTube「評価指標」"},
+          {day:"火",min:45,type:"動画+メモ",task:"過学習・汎化・バイアスバリアンスを図で理解",video:"YouTube「過学習わかりやすく」"},
+          {day:"水",min:30,type:"動画",task:"ニューラルネット・ディープラーニングの概要をアニメで理解",video:"3Blue1Brown「ニューラルネットワーク」（字幕ON）"},
+          {day:"木",min:45,type:"動画+メモ",task:"NLP・画像認識・推薦システムの概要を把握",video:"東大MIセンター「AIの応用」"},
+          {day:"金",min:30,type:"復習",task:"「病気の見逃しを防ぎたい → 再現率・適合率どちらを重視？」を確認",video:"—"},
+        ]},
+      {week:8,title:"データ処理・倫理・法律",checkpoint:"「匿名化と仮名化の違い」「AIバイアスの具体例」を説明できる",
+        keywords:["欠損値処理","正規化","標準化","AIバイアス","説明可能AI","個人情報保護法","GDPR"],
+        days:[
+          {day:"月",min:30,type:"動画",task:"データ収集〜加工〜可視化の流れを動画で把握",video:"東大MIセンター「データの取り扱い」"},
+          {day:"火",min:45,type:"動画+メモ",task:"正規化・標準化・欠損値処理の違いを整理",video:"YouTube「前処理まとめ」"},
+          {day:"水",min:30,type:"動画",task:"AI倫理・バイアス問題を動画で概観",video:"東大MIセンター「AI倫理」"},
+          {day:"木",min:30,type:"動画",task:"個人情報保護法・GDPR・著作権の基礎を確認",video:"東大MIセンター「データの法律」"},
+          {day:"金",min:30,type:"復習",task:"この3週間の弱点キーワードを10個ピックアップして再確認",video:"—"},
+        ]},
+    ]},
+  {id:4,label:"PHASE 4",title:"仕上げ・本番対策",weeks:"9〜10週目",color:"#F87171",bg:"rgba(248,113,113,0.08)",border:"rgba(248,113,113,0.25)",
+    weeks_data:[
+      {week:9,title:"弱点つぶし＆模擬試験①",checkpoint:"模擬試験の間違いを全て「なぜ間違えたか」説明できる",
+        keywords:["模擬試験","弱点分析","時間配分","頻出キーワード"],
+        days:[
+          {day:"月",min:60,type:"模擬試験",task:"公式模擬試験90問を本番形式（90分）で解く",video:"公式リファレンスブック付属"},
+          {day:"火",min:60,type:"復習",task:"間違えた問題を分野別に分類し、各解説動画を検索して視聴",video:"YouTube「DS検定 [苦手分野] 解説」"},
+          {day:"水",min:45,type:"動画",task:"統計分野の苦手箇所を重点的に再視聴",video:"各自の弱点に合わせて選択"},
+          {day:"木",min:45,type:"動画",task:"機械学習分野の苦手箇所を重点的に再視聴",video:"各自の弱点に合わせて選択"},
+          {day:"金",min:30,type:"復習",task:"頻出キーワード50個をフラッシュカード風に高速確認",video:"—"},
+        ]},
+      {week:10,title:"最終仕上げ＆本番！",checkpoint:"模擬試験2回目で70%以上 → 合格水準 ✅",
+        keywords:["最終確認","本番対策","メンタル","受験"],
+        days:[
+          {day:"月",min:45,type:"復習",task:"先週の間違い問題を再度解く（完全理解確認）",video:"—"},
+          {day:"火",min:45,type:"模擬試験",task:"模擬試験2回目 → スコア確認（目標70%以上）",video:"公式模擬試験"},
+          {day:"水",min:30,type:"復習",task:"「絶対忘れちゃいけない20語」リストを自作して暗記",video:"—"},
+          {day:"木",min:30,type:"復習",task:"軽く流し読み・前日は詰め込みすぎない",video:"気になった動画を1本だけ"},
+          {day:"金",min:0,type:"本番",task:"🎉 本番！自信を持って受験",video:"—"},
+        ]},
+    ]},
+];
+
+const VIDEOS=[
+  {category:"🎓 東大MIセンター（最重要・完全無料）",color:"#818CF8",desc:"DS検定の出題元カリキュラムに完全準拠。まずここから。",url:"https://www.mi.u-tokyo.ac.jp/6university_consortium.html",
+    items:["第1章：社会で起きているデータ革命","第2章：データ・AI利活用のための技術","第3章：データサイエンスのサイクル","第4章：データの種類と収集","第5章：統計・確率の基礎","第6章：機械学習・AI入門","第7章：AIの社会実装と倫理"]},
+  {category:"📺 統計学の時間（YouTube）",color:"#34D399",desc:"統計の概念を日本語でやさしく解説。初心者に最もわかりやすい。",url:"https://www.youtube.com/@toukei_no_jikan",
+    items:["代表値（平均・中央値・最頻値）","標準偏差と分散","正規分布・標準化","相関分析と散布図","仮説検定の基礎","信頼区間の読み方"]},
+  {category:"📺 予備校のノリで学ぶ（YouTube）",color:"#FBBF24",desc:"テンポよく、確率・統計の計算概念を解説。",url:"https://www.youtube.com/@yobinori",
+    items:["確率の基本・加法則・乗法則","条件付き確率・ベイズの定理","期待値と分散","信頼区間・仮説検定","線形回帰・回帰分析"]},
+  {category:"🔵 3Blue1Brown（YouTube・英語/字幕あり）",color:"#60A5FA",desc:"アニメーションで直感的に数学・機械学習を理解できる。英語だが字幕設定可。",url:"https://www.youtube.com/c/3blue1brown",
+    items:["ニューラルネットワーク（全4回）","線形代数の本質","ベイズ定理（視覚的解説）"]},
+];
+
+const TIPS=[
+  {icon:"🎯",title:"動画は「1.5倍速」で2回見る",body:"1回目は流れをつかむだけ（1倍速 or 1.5倍速）。2回目に重要箇所だけメモを取る。この2ステップが定着に効く。",color:"#818CF8"},
+  {icon:"📝",title:"見るだけで終わらせない",body:"動画を見た後に「今日学んだことを3行で書く」習慣をつける。アウトプットが最大の定着法。スマホのメモ帳で十分。",color:"#34D399"},
+  {icon:"⚡",title:"30分でも続ける仕組みを作る",body:"「今日は疲れた」という日は動画1本だけ（10〜15分）でもOK。0日より1本のほうが圧倒的に価値がある。",color:"#FBBF24"},
+  {icon:"🔑",title:"用語は「意味と使い場面」セットで覚える",body:"「過学習 = 訓練データに適合しすぎて汎化性能が下がること、例：少ないデータで複雑なモデルを使った時」のように文脈ごと覚える。",color:"#F87171"},
+  {icon:"📊",title:"出題比率を意識して時間配分",body:"統計25% + ML/AI25% = 全体の半分。この2分野を週の7割の時間に使うのが合格への最短距離。倫理・法律は直前2〜3日で十分。",color:"#60A5FA"},
+];
+
+const typeStyle={
+  "動画":{bg:"rgba(129,140,248,0.15)",color:"#818CF8"},
+  "動画+メモ":{bg:"rgba(52,211,153,0.15)",color:"#34D399"},
+  "動画+演習":{bg:"rgba(251,191,36,0.15)",color:"#FBBF24"},
+  "模擬試験":{bg:"rgba(248,113,113,0.15)",color:"#F87171"},
+  "模擬問題":{bg:"rgba(248,113,113,0.15)",color:"#F87171"},
+  "復習":{bg:"rgba(156,163,175,0.12)",color:"#9CA3AF"},
+  "本番":{bg:"rgba(251,191,36,0.25)",color:"#FBBF24"},
+};
+
+// ── COMPONENT ──────────────────────────────────────────
+function App(){
+  const[tab,setTab]=useState("plan");
+  const[activePhase,setActivePhase]=useState(1);
+  const[activeWeek,setActiveWeek]=useState(1);
+  const[done,setDone]=useState({});
+  const[saveStatus,setSaveStatus]=useState("idle");
+  const[loaded,setLoaded]=useState(false);
+
+  // 起動時: localStorageから読み込み
+  useEffect(()=>{
+    try{
+      const raw=localStorage.getItem("ds-progress");
+      if(raw) setDone(JSON.parse(raw));
+    }catch(_){}
+    setLoaded(true);
+  },[]);
+
+  // doneが変わるたびに自動保存
+  useEffect(()=>{
+    if(!loaded) return;
+    setSaveStatus("saving");
+    try{
+      localStorage.setItem("ds-progress",JSON.stringify(done));
+      setSaveStatus("saved");
+      setTimeout(()=>setSaveStatus("idle"),2000);
+    }catch(_){
+      setSaveStatus("error");
+      setTimeout(()=>setSaveStatus("idle"),3000);
+    }
+  },[done,loaded]);
+
+  const toggleDone=key=>setDone(p=>({...p,[key]:!p[key]}));
+
+  const resetProgress=()=>{
+    if(!window.confirm("進捗をリセットしますか？")) return;
+    setDone({});
+    localStorage.removeItem("ds-progress");
+  };
+
+  const allDays=PHASES.flatMap(ph=>ph.weeks_data.flatMap(w=>w.days));
+  const totalTasks=allDays.length;
+  const doneTasks=Object.values(done).filter(Boolean).length;
+  const overallPct=Math.round(doneTasks/totalTasks*100);
+
+  const phase=PHASES.find(p=>p.id===activePhase);
+  const weekData=phase?.weeks_data.find(w=>w.week===activeWeek);
+
+  return(
+    <div style={{fontFamily:"'Hiragino Sans','Yu Gothic',sans-serif",background:"#08080f",minHeight:"100vh",color:"#e2e2ee"}}>
+
+      {/* HEADER */}
+      <div style={{background:"linear-gradient(160deg,#0f0c29,#1a1040,#0a1020)",padding:"24px 16px 20px",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
+        <div style={{maxWidth:660,margin:"0 auto"}}>
+          <div style={{fontSize:10,letterSpacing:3,color:"#818CF8",textTransform:"uppercase",marginBottom:4}}>動画メイン × 30〜60分/日 × 2〜3ヶ月</div>
+          <div style={{fontSize:22,fontWeight:900,lineHeight:1.2,marginBottom:2}}>DS検定★ 完全攻略ガイド</div>
+          <div style={{fontSize:12,color:"#555",marginBottom:16}}>データサイエンティスト検定 リテラシーレベル</div>
+          {/* progress */}
+          <div style={{background:"rgba(255,255,255,0.05)",borderRadius:12,padding:"12px 14px"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:12,marginBottom:6}}>
+              <span style={{color:"#888"}}>総合進捗</span>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <span style={{fontSize:11,color:saveStatus==="saved"?"#34D399":saveStatus==="saving"?"#FBBF24":saveStatus==="error"?"#F87171":"transparent",transition:"color .3s"}}>
+                  {saveStatus==="saving"?"⏳ 保存中":saveStatus==="saved"?"✅ 保存済み":saveStatus==="error"?"❌ 保存失敗":"✅ 保存済み"}
+                </span>
+                <span style={{color:"#818CF8",fontWeight:800}}>{overallPct}%（{doneTasks}/{totalTasks}）</span>
+              </div>
+            </div>
+            <div style={{background:"rgba(255,255,255,0.07)",borderRadius:99,height:7,overflow:"hidden"}}>
+              <div style={{height:"100%",borderRadius:99,width:`${overallPct}%`,background:"linear-gradient(90deg,#818CF8,#34D399,#FBBF24)",transition:"width .5s"}}/>
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:8}}>
+              <span style={{fontSize:11,color:"#444"}}>
+                {!loaded?"📂 読み込み中…":doneTasks===0?"📂 新規スタート":"📂 前回の続きから再開中"}
+              </span>
+              {doneTasks>0&&(
+                <button onClick={resetProgress} style={{fontSize:11,color:"#555",background:"none",border:"1px solid #333",borderRadius:6,padding:"2px 8px"}}>リセット</button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{maxWidth:660,margin:"0 auto",padding:"0 14px"}}>
+
+        {/* TABS */}
+        <div style={{display:"flex",gap:4,marginTop:16,marginBottom:18}}>
+          {[["plan","📅 週別プラン"],["videos","▶️ 動画リスト"],["tips","💡 学習のコツ"]].map(([k,l])=>(
+            <button key={k} onClick={()=>setTab(k)} style={{
+              flex:1,padding:"9px 4px",border:"none",borderRadius:10,
+              background:tab===k?"rgba(129,140,248,0.15)":"rgba(255,255,255,0.04)",
+              color:tab===k?"#818CF8":"#666",fontWeight:tab===k?700:400,fontSize:13,
+              borderBottom:tab===k?"2px solid #818CF8":"2px solid transparent",transition:"all .2s"
+            }}>{l}</button>
+          ))}
+        </div>
+
+        {/* PLAN TAB */}
+        {tab==="plan"&&(
+          <>
+            {/* Phase selector */}
+            <div style={{display:"flex",gap:8,marginBottom:16,overflowX:"auto",paddingBottom:4}}>
+              {PHASES.map(ph=>(
+                <button key={ph.id} onClick={()=>{setActivePhase(ph.id);setActiveWeek(ph.weeks_data[0].week);}}
+                  style={{minWidth:130,padding:"10px 12px",border:`1.5px solid ${activePhase===ph.id?ph.color:"rgba(255,255,255,0.08)"}`,
+                    borderRadius:12,textAlign:"left",background:activePhase===ph.id?ph.bg:"rgba(255,255,255,0.03)",transition:"all .2s"}}>
+                  <div style={{fontSize:10,color:ph.color,fontWeight:700,letterSpacing:1}}>{ph.label}</div>
+                  <div style={{fontSize:13,fontWeight:700,color:activePhase===ph.id?"#eee":"#777",lineHeight:1.3,marginTop:2}}>{ph.title}</div>
+                  <div style={{fontSize:11,color:"#444",marginTop:2}}>{ph.weeks}</div>
+                </button>
+              ))}
+            </div>
+
+            {/* Week selector */}
+            {phase&&(
+              <div style={{display:"flex",gap:6,marginBottom:16}}>
+                {phase.weeks_data.map(w=>{
+                  const wDone=w.days.filter((_,i)=>done[`${w.week}-${i}`]).length;
+                  const pct=Math.round(wDone/w.days.length*100);
+                  return(
+                    <button key={w.week} onClick={()=>setActiveWeek(w.week)} style={{
+                      flex:1,padding:"10px 8px",border:`1.5px solid ${activeWeek===w.week?phase.color:"rgba(255,255,255,0.07)"}`,
+                      borderRadius:10,textAlign:"center",background:activeWeek===w.week?phase.bg:"rgba(255,255,255,0.03)",transition:"all .2s"}}>
+                      <div style={{fontSize:11,color:activeWeek===w.week?phase.color:"#444",fontWeight:700}}>第{w.week}週</div>
+                      <div style={{fontSize:18,fontWeight:800,color:activeWeek===w.week?phase.color:"#333",marginTop:1}}>{pct}%</div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Week detail */}
+            {weekData&&(
+              <>
+                <div style={{background:phase.bg,border:`1px solid ${phase.border}`,borderRadius:14,padding:"14px 16px",marginBottom:12}}>
+                  <div style={{fontSize:11,color:phase.color,fontWeight:700,letterSpacing:1,marginBottom:3}}>{phase.label} ／ 第{weekData.week}週</div>
+                  <div style={{fontSize:17,fontWeight:800,marginBottom:4}}>{weekData.title}</div>
+                  <div style={{fontSize:13,color:"#aaa"}}>🎯 {weekData.checkpoint}</div>
+                </div>
+                {weekData.days.map((d,i)=>{
+                  const key=`${weekData.week}-${i}`;
+                  const isDone=done[key];
+                  const ts=typeStyle[d.type]||{bg:"rgba(255,255,255,0.07)",color:"#aaa"};
+                  return(
+                    <div key={i} onClick={()=>toggleDone(key)} style={{
+                      display:"flex",gap:10,alignItems:"flex-start",
+                      padding:"12px 14px",borderRadius:12,marginBottom:8,
+                      background:isDone?"rgba(255,255,255,0.02)":"rgba(255,255,255,0.05)",
+                      border:`1px solid ${isDone?"rgba(255,255,255,0.04)":"rgba(255,255,255,0.09)"}`,
+                      opacity:isDone?0.5:1,transition:"all .2s",cursor:"pointer"}}>
+                      <div style={{
+                        width:20,height:20,borderRadius:5,flexShrink:0,marginTop:2,
+                        background:isDone?phase.color:"transparent",
+                        border:`2px solid ${isDone?phase.color:"#444"}`,
+                        display:"flex",alignItems:"center",justifyContent:"center",
+                        fontSize:11,color:"#000",fontWeight:800,transition:"all .2s"
+                      }}>{isDone?"✓":""}</div>
+                      <div style={{flex:1}}>
+                        <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4,flexWrap:"wrap"}}>
+                          <span style={{fontSize:11,fontWeight:700,color:phase.color,background:phase.bg,padding:"1px 8px",borderRadius:99}}>{d.day}曜</span>
+                          <span style={{fontSize:11,fontWeight:600,color:ts.color,background:ts.bg,padding:"1px 8px",borderRadius:99}}>{d.type}</span>
+                          <span style={{fontSize:11,color:"#555",marginLeft:"auto"}}>⏱ {d.min}分</span>
+                        </div>
+                        <div style={{fontSize:14,fontWeight:600,marginBottom:d.video&&d.video!=="—"?3:0,textDecoration:isDone?"line-through":"none"}}>{d.task}</div>
+                        {d.video&&d.video!=="—"&&<div style={{fontSize:12,color:"#555"}}>▶ {d.video}</div>}
+                      </div>
+                    </div>
+                  );
+                })}
+                <div style={{background:"rgba(255,255,255,0.03)",borderRadius:12,padding:"12px 14px",marginTop:4}}>
+                  <div style={{fontSize:12,color:"#555",marginBottom:8,fontWeight:700}}>🔑 今週のキーワード</div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                    {weekData.keywords.map(kw=>(
+                      <span key={kw} style={{fontSize:12,padding:"3px 10px",borderRadius:99,background:phase.bg,color:phase.color,border:`1px solid ${phase.border}`}}>{kw}</span>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </>
+        )}
+
+        {/* VIDEOS TAB */}
+        {tab==="videos"&&(
+          <div>
+            <div style={{fontSize:13,color:"#555",marginBottom:14}}>動画メイン学習に最適な無料リソースを厳選。すべて無料で使えます。</div>
+            {VIDEOS.map((v,i)=>(
+              <div key={i} style={{background:"rgba(255,255,255,0.04)",borderRadius:14,padding:"14px 16px",marginBottom:12,borderLeft:`3px solid ${v.color}`}}>
+                <div style={{fontWeight:800,fontSize:14,color:v.color,marginBottom:4}}>{v.category}</div>
+                <div style={{fontSize:12,color:"#777",marginBottom:10}}>{v.desc}</div>
+                {v.items.map((item,j)=>(
+                  <div key={j} style={{fontSize:13,color:"#bbb",padding:"5px 0",borderBottom:j<v.items.length-1?"1px solid rgba(255,255,255,0.05)":"none",display:"flex",alignItems:"center",gap:8}}>
+                    <span style={{color:v.color,fontSize:10}}>▶</span>{item}
+                  </div>
+                ))}
+                {v.url&&<a href={v.url} target="_blank" rel="noopener noreferrer" style={{display:"block",marginTop:10,fontSize:12,color:"#555",wordBreak:"break-all"}}>🔗 {v.url}</a>}
+              </div>
+            ))}
+            <div style={{background:"rgba(251,191,36,0.07)",border:"1px solid rgba(251,191,36,0.2)",borderRadius:12,padding:"14px 16px"}}>
+              <div style={{fontWeight:700,color:"#FBBF24",marginBottom:6,fontSize:14}}>📗 唯一の有料教材（推奨）</div>
+              <div style={{fontSize:13,color:"#ccc",lineHeight:1.8}}>
+                <strong>公式リファレンスブック（第2版）</strong> 約2,000円<br/>
+                付属の模擬試験90問が最大の価値。動画で概念を理解した後、この本で問題演習。<br/>
+                <span style={{color:"#666"}}>他の参考書は買わなくてOK！これ1冊で十分。</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TIPS TAB */}
+        {tab==="tips"&&(
+          <div>
+            {TIPS.map((t,i)=>(
+              <div key={i} style={{background:"rgba(255,255,255,0.04)",borderLeft:`3px solid ${t.color}`,borderRadius:"0 12px 12px 0",padding:"14px 16px",marginBottom:12}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+                  <span style={{fontSize:20}}>{t.icon}</span>
+                  <div style={{fontWeight:700,fontSize:14,color:t.color}}>{t.title}</div>
+                </div>
+                <div style={{fontSize:13,color:"#bbb",lineHeight:1.7}}>{t.body}</div>
+              </div>
+            ))}
+            <div style={{background:"rgba(248,113,113,0.07)",border:"1px solid rgba(248,113,113,0.2)",borderRadius:14,padding:"14px 16px",marginTop:4}}>
+              <div style={{fontWeight:800,fontSize:15,color:"#F87171",marginBottom:10}}>🎯 試験当日のポイント</div>
+              {[["⏱","90問・90分なので1問あたり約1分。迷ったら後でフラグを立てて次へ進む"],["🖥","CBT方式（PC受験）。マウス操作に慣れておく"],["📐","電卓持ち込み可（関数電卓は不可）。計算問題は少ないが一応持参"],["🧘","試験前夜は詰め込まない。前日は軽い復習だけ。睡眠が最高の対策"]].map(([icon,text],i)=>(
+                <div key={i} style={{display:"flex",gap:10,padding:"6px 0",borderBottom:i<3?"1px solid rgba(255,255,255,0.05)":"none"}}>
+                  <span style={{fontSize:16,flexShrink:0}}>{icon}</span>
+                  <span style={{fontSize:13,color:"#ccc"}}>{text}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div style={{height:40}}/>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
