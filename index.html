@@ -19,7 +19,7 @@
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const{useState,useEffect}=React;
+const{useState,useEffect,useRef}=React;
 
 // ── DATA ──────────────────────────────────────────────
 const PHASES=[
@@ -164,12 +164,25 @@ function App(){
   const[done,setDone]=useState({});
   const[saveStatus,setSaveStatus]=useState("idle");
   const[loaded,setLoaded]=useState(false);
+  const[memos,setMemos]=useState([]);
+  const[memoTitle,setMemoTitle]=useState("");
+  const[memoContent,setMemoContent]=useState("");
+  const[memoTag,setMemoTag]=useState("動画URL");
+  const memoIdRef=useRef(1);
 
   // 起動時: localStorageから読み込み
   useEffect(()=>{
     try{
       const raw=localStorage.getItem("ds-progress");
       if(raw) setDone(JSON.parse(raw));
+    }catch(_){}
+    try{
+      const rawM=localStorage.getItem("ds-memos");
+      if(rawM){
+        const parsed=JSON.parse(rawM);
+        setMemos(parsed);
+        if(parsed.length>0) memoIdRef.current=Math.max(...parsed.map(m=>m.id))+1;
+      }
     }catch(_){}
     setLoaded(true);
   },[]);
@@ -195,6 +208,26 @@ function App(){
     setDone({});
     localStorage.removeItem("ds-progress");
   };
+
+  // メモの保存
+  useEffect(()=>{
+    if(!loaded) return;
+    try{ localStorage.setItem("ds-memos",JSON.stringify(memos)); }catch(_){}
+  },[memos,loaded]);
+
+  const addMemo=()=>{
+    if(!memoContent.trim()) return;
+    const now=new Date();
+    const dateStr=`${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,"0")}/${String(now.getDate()).padStart(2,"0")} ${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
+    setMemos(p=>[{id:memoIdRef.current++,title:memoTitle.trim()||"無題",content:memoContent.trim(),tag:memoTag,date:dateStr},...p]);
+    setMemoTitle("");
+    setMemoContent("");
+  };
+
+  const deleteMemo=id=>setMemos(p=>p.filter(m=>m.id!==id));
+
+  const MEMO_TAGS=["動画URL","キーワード","疑問点","気づき","その他"];
+  const MEMO_TAG_COLOR={"動画URL":"#818CF8","キーワード":"#34D399","疑問点":"#FBBF24","気づき":"#60A5FA","その他":"#9CA3AF"};
 
   const allDays=PHASES.flatMap(ph=>ph.weeks_data.flatMap(w=>w.days));
   const totalTasks=allDays.length;
@@ -243,11 +276,11 @@ function App(){
 
         {/* TABS */}
         <div style={{display:"flex",gap:4,marginTop:16,marginBottom:18}}>
-          {[["plan","📅 週別プラン"],["videos","▶️ 動画リスト"],["tips","💡 学習のコツ"]].map(([k,l])=>(
+          {[["plan","📅 週別プラン"],["videos","▶️ 動画リスト"],["tips","💡 学習のコツ"],["memo","📝 メモ"]].map(([k,l])=>(
             <button key={k} onClick={()=>setTab(k)} style={{
               flex:1,padding:"9px 4px",border:"none",borderRadius:10,
               background:tab===k?"rgba(129,140,248,0.15)":"rgba(255,255,255,0.04)",
-              color:tab===k?"#818CF8":"#666",fontWeight:tab===k?700:400,fontSize:13,
+              color:tab===k?"#818CF8":"#666",fontWeight:tab===k?700:400,fontSize:12,
               borderBottom:tab===k?"2px solid #818CF8":"2px solid transparent",transition:"all .2s"
             }}>{l}</button>
           ))}
@@ -386,6 +419,73 @@ function App(){
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* MEMO TAB */}
+        {tab==="memo"&&(
+          <div>
+            {/* 入力フォーム */}
+            <div style={{background:"rgba(255,255,255,0.04)",borderRadius:14,padding:"14px 16px",marginBottom:16}}>
+              <div style={{fontSize:13,fontWeight:700,color:"#818CF8",marginBottom:10}}>新しいメモを追加</div>
+              {/* タグ選択 */}
+              <div style={{display:"flex",gap:6,marginBottom:10,flexWrap:"wrap"}}>
+                {MEMO_TAGS.map(t=>(
+                  <button key={t} onClick={()=>setMemoTag(t)} style={{
+                    fontSize:11,padding:"3px 10px",borderRadius:99,border:`1px solid ${memoTag===t?MEMO_TAG_COLOR[t]:"rgba(255,255,255,0.1)"}`,
+                    background:memoTag===t?`rgba(${t==="動画URL"?"129,140,248":t==="キーワード"?"52,211,153":t==="疑問点"?"251,191,36":t==="気づき"?"96,165,250":"156,163,175"},0.15)`:"transparent",
+                    color:memoTag===t?MEMO_TAG_COLOR[t]:"#555",cursor:"pointer",transition:"all .15s"
+                  }}>{t}</button>
+                ))}
+              </div>
+              {/* タイトル */}
+              <input
+                value={memoTitle}
+                onChange={e=>setMemoTitle(e.target.value)}
+                placeholder="タイトル（省略可）"
+                style={{width:"100%",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"8px 12px",color:"#e2e2ee",fontSize:13,marginBottom:8,outline:"none",boxSizing:"border-box"}}
+              />
+              {/* 内容 */}
+              <textarea
+                value={memoContent}
+                onChange={e=>setMemoContent(e.target.value)}
+                placeholder="動画URLやメモ内容を入力..."
+                rows={3}
+                style={{width:"100%",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"8px 12px",color:"#e2e2ee",fontSize:13,resize:"vertical",outline:"none",boxSizing:"border-box",fontFamily:"inherit"}}
+              />
+              <button onClick={addMemo} style={{
+                marginTop:8,width:"100%",padding:"9px",borderRadius:10,border:"none",
+                background:"rgba(129,140,248,0.2)",color:"#818CF8",fontWeight:700,fontSize:13,
+                cursor:"pointer",transition:"all .2s"
+              }}>＋ 保存する</button>
+            </div>
+
+            {/* メモ一覧 */}
+            {memos.length===0?(
+              <div style={{textAlign:"center",padding:"40px 0",color:"#444",fontSize:13}}>メモはまだありません</div>
+            ):(
+              memos.map(m=>{
+                const tc=MEMO_TAG_COLOR[m.tag]||"#9CA3AF";
+                const isUrl=m.content.match(/^https?:\/\//);
+                return(
+                  <div key={m.id} style={{background:"rgba(255,255,255,0.04)",borderRadius:12,padding:"12px 14px",marginBottom:8,borderLeft:`3px solid ${tc}`}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
+                      <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+                        <span style={{fontSize:10,padding:"2px 8px",borderRadius:99,background:`rgba(0,0,0,0.3)`,color:tc,border:`1px solid ${tc}`}}>{m.tag}</span>
+                        <span style={{fontSize:13,fontWeight:700,color:"#ccc"}}>{m.title}</span>
+                      </div>
+                      <button onClick={()=>deleteMemo(m.id)} style={{fontSize:14,color:"#444",background:"none",border:"none",cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
+                    </div>
+                    {isUrl?(
+                      <a href={m.content} target="_blank" rel="noopener noreferrer" style={{fontSize:12,color:"#60A5FA",wordBreak:"break-all",display:"block",marginBottom:4}}>{m.content}</a>
+                    ):(
+                      <div style={{fontSize:13,color:"#bbb",whiteSpace:"pre-wrap",wordBreak:"break-all",marginBottom:4}}>{m.content}</div>
+                    )}
+                    <div style={{fontSize:11,color:"#444"}}>{m.date}</div>
+                  </div>
+                );
+              })
+            )}
           </div>
         )}
 
